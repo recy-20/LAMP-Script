@@ -1,0 +1,174 @@
+#!/bin/bash
+echo "======================="
+echo "==Start of the script=="
+echo "======================="
+echo " "
+echo "==========================="
+echo "  Installation of Apache"
+echo "   =====================  "
+yum install -y httpd
+
+echo "Starting apache"
+systemctl start httpd.service
+
+echo "Checking the status of apache#"
+systemctl status httpd | grep active
+
+echo "Adding firewall rules"
+firewall-cmd --add-port 80/tcp --permanent
+firewall-cmd --add-port 443/tcp --permanent
+
+echo "Reload firewall"
+firewall-cmd --reload
+
+echo "Enable apache web service"
+systemctl enable httpd.service
+
+echo "==========================================="
+echo "  End of Apache http server installation   "
+echo "    ===================================    "
+echo " "
+# open your web browser and type your ip address
+# the initial apache web page must be displayed
+
+echo "==================="
+echo "  Installing PHP   "
+echo "   ============    "
+yum install -y php php-mysql
+
+echo "Installing php module"
+yum install php-fpm -y
+
+echo "Restarting apache server"
+systemctl restart httpd.service
+
+echo "Checking the status of apache"
+systemctl status httpd | grep active
+
+echo "Testing the PHP on the web server"
+echo "<?php phpinfo(); ?>" > /var/www/html/info.php
+
+echo "==========================="
+echo "  End of PHP installation   "
+echo "   =====================    "
+echo " "
+# go to the browser and type ip address/info.php
+# the php page must be displayed
+
+echo "======================="
+echo "  Installing MariaDB   "
+echo "   ================    "
+yum install -y mariadb-server mariadb
+
+echo "Starting MariaDB"
+systemctl start mariadb
+
+echo "Checking the status of mariadb"
+systemctl status mariadb | grep active
+
+echo "securing installation by creating a password to access mariadb"
+mysql_secure_installation << MYSQL
+
+Y
+root
+root
+Y
+Y
+Y
+Y
+MYSQL
+
+echo "Enable MariaDB"
+systemctl enable mariadb.service
+echo "=============================="
+echo " End of MariaDB Installation  "
+echo "  =========================   "
+echo " "
+# Apache, PHP, and mariadb service has been installed successfully.
+
+echo "================================================="
+echo "End of automating LAMP stack installation process"
+
+echo " WORDPRESS Installation in LAMP"
+echo "Creating wordpress database"
+mysql -u root --password=root << MYSQL
+CREATE DATABASE wordpress;
+CREATE USER wordpressuser@localhost IDENTIFIED BY '12345';
+GRANT ALL PRIVILEGES ON wordpress.* TO wordpressuser@localhost IDENTIFIED BY '12345';
+FLUSH PRIVILEGES;
+MYSQL
+
+echo "==========================="
+echo "wordpress database created"
+echo " "
+
+echo "==========================="
+echo "Install php for wordpress"
+yum install -y php-gd
+
+echo "restarting apache"
+systemctl restart httpd
+
+echo "checking the status of apache"
+systemctl status httpd | grep active
+
+echo "download wordpress through url"
+cd /opt/
+yum install -y wget
+wget http://wordpress.org/latest.tar.gz
+
+echo "extracting wordpress file"
+tar xzvf latest.tar.gz
+
+echo "installing rsync"
+yum install -y rsync
+echo "copying wordpress files to apache directory"
+rsync -avP wordpress/ /var/www/html/
+echo "creating folder to store uploaded files"
+mkdir /var/www/html/wp-content/uploads
+echo "changing permission for wordpress files"
+chown -R apache:apache /var/www/html/*
+
+echo "Configuring wordpress"
+cd /var/www/html/
+cp wp-config-sample.php wp-config.php
+echo "wp-config file copied"
+sed -i 's/database_name_here/wordpress/g' wp-config.php
+sed -i 's/username_here/wordpressuser/g' wp-config.php
+sed -i 's/password_here/12345/g' wp-config.php
+
+echo "==============================================="
+echo " db name, user and password has been updated   "
+echo "  =========================================    "
+
+echo "Restarting apache"
+systemctl restart httpd
+
+echo "================================================"
+echo "Installing some other packages to run wordpress"
+yum install http://rpms.remirepo.net/enterprise/remi-release-7.rpm -y
+yum install yum-utils -y
+yum-config-manager --enable remi-php56  -y
+yum install php php-mcrypt php-cli php-gd php-curl php-mysql php-ldap php-zip php-fileinfo -y
+
+echo "restart apache web service"
+systemctl restart httpd
+
+echo "checking the status of apache service"
+systemctl status httpd | grep active
+
+#reload your web browser
+#the wordpress page must now available and able to access
+
+echo " "
+echo "==============================="
+echo "End of wordpress configuration"
+echo " "
+echo "======================="
+echo "=  End of the script  ="
+echo "======================="
+echo " "
+echo "Great Work!"
+echo " "
+echo "Automation script by Recy Dequiros ^_^"
+echo " "
