@@ -1,0 +1,21 @@
+#!/bin/bash
+echo "=================================================="
+echo "= This script will backup the wordpress database ="
+echo "=================================================="
+echo " "
+echo "Creating folder for backup files"
+mkdir /opt/backups
+cd /opt/backups
+echo "Creating a backup for wordpress database"
+mysqldump -u wordpressuser -p12345 wordpress > wordpress_$(date +"%m%d%Y").sql
+
+echo "database backup compression"
+tar -zcf wordpress_$(date +"%m%d%Y").tar.gz wordpress_$(date +"%m%d%Y").sql
+
+echo "database has been backed up successfully "
+
+# you can check your db backup files on the backups folder inside /opt/
+echo " "
+echo "====================="
+echo "= End of the script ="
+echo "====================="
